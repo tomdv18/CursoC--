@@ -10,7 +10,7 @@ const int width = 20;
 const int height = 20;
 
 
-enum snakeDir {LEFT,RIGHT, UP, DOWN, STOP = 0};
+enum snakeDir {STOP = 0, LEFT,RIGHT, UP, DOWN};
 
 void setUp(bool *gameOver, int* x, int* y, int *fruitX,int*fruitY, int*score, snakeDir *dir){
     *gameOver = false;
@@ -23,7 +23,7 @@ void setUp(bool *gameOver, int* x, int* y, int *fruitX,int*fruitY, int*score, sn
 
     
 }
-void draw(int x, int y, int fruitX, int fruitY){
+void draw(int x, int y, int fruitX, int fruitY, int score){
     system("clear");
     for (size_t i = 0; i < width; i++){
         cout << "#";
@@ -35,7 +35,7 @@ void draw(int x, int y, int fruitX, int fruitY){
             if (j== y && k == x){
                 cout << "0";
             }
-            else if (j==fruitY && k == fruitY){
+            else if (j==fruitY && k == fruitX){
                 cout << "o";
             }
             else if (k== 0  || k == width -1){
@@ -51,57 +51,69 @@ void draw(int x, int y, int fruitX, int fruitY){
        cout << "#";
     }
     cout << endl;
+    cout << "Score: " << score << endl;
     
     
 
 }
+#include <ncurses.h>
+
 void getInput(snakeDir * dir, bool *gameOver){
-    initscr();
-    cbreak();
-    noecho();
-    scrollok(stdscr, TRUE);
-    nodelay(stdscr, TRUE);
-    if(getch() == 'w'){
+    initscr(); // Inicializa ncurses
+    cbreak(); // Desactiva el buffer de línea, pasando todo al usuario
+    noecho(); // No muestra los caracteres ingresados
+
+    timeout(0); // La función getch() no espera la entrada del usuario
+    int ch = getch(); // Lee el caracter
+
+    if(ch == 'w'){
         *dir = UP;
-        return;
     }
-    else if(getch() == 'a'){
+    else if(ch == 'a'){
         *dir = LEFT;
-        return;
     }
-    else if(getch() == 's'){
+    else if(ch == 's'){
         *dir = DOWN;
-        return;
     }
-    else if(getch() == 'd'){
+    else if(ch == 'd'){
         *dir = RIGHT;
-        return;
     }
-    else if(getch() == 'x'){
+    else if(ch == 'x'){
         *gameOver = true;
-        return;
     }
-    
+
+    endwin(); // Finaliza ncurses
 }
 
-void controller(snakeDir dir, int *x, int *y){
+void controller(snakeDir dir, int *x, int *y, bool *gameOver, int *fruitX, int* fruitY, int*score){
+    if (*x == *fruitX && *y == *fruitY){
+        cout << "Point Scored!" << endl;
+        *score = *score +1;
+        *fruitX = rand()% width;
+        *fruitY = rand()% height;
+    }
     switch (dir)
     {
     case LEFT:
-        *x--;
+        *x = *x - 1;
         break;
     case RIGHT:
-        *x++;
+        *x= *x + 1;
         break;
     case UP:
-        *y--;
+        *y = *y - 1;
         break;
     case DOWN:
-        *y++;
+        *y= *y + 1;
         break;
     default:
         break;
     }
+    if (*x< 0 || *x > width ||  *y < 0 || *y > height){
+        *gameOver = true;
+    }
+
+    
 }
 int main(){
 
@@ -112,10 +124,10 @@ int main(){
     setUp(&gameOver, &x,&y,&fruitX,&fruitY,&score, &dir);
 
     while (!gameOver){
-        draw(x,y,fruitX,fruitY);   
+        draw(x,y,fruitX,fruitY, score);   
         getInput(&dir, &gameOver);
-        controller(dir, &x, &y);
-        sleep(5);
+        controller(dir, &x, &y, &gameOver, &fruitX, &fruitY, &score);
+        sleep(1);
     }
     return 0;
 }
